@@ -32,6 +32,8 @@ Archivo predeterminado: `data/panda-gestion.db`. Puede modificarse con `DATABASE
 
 En Docker, `DATABASE_PATH` apunta a `/app/data/panda-gestion.db` y el directorio está respaldado por el volumen persistente `pandagestion_data`. La imagen usa el modo `standalone` de Next.js y se ejecuta con el usuario no privilegiado `nextjs` (UID 1001).
 
+La conexión SQLite se inicializa de forma diferida en la primera petición. Esto evita que los workers paralelos de `next build` intenten crear o configurar la misma base durante la compilación de la imagen.
+
 Tablas:
 
 - `concepts`: plantillas de gastos habituales.

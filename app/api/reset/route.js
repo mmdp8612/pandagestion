@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import { getDatabase } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 export function POST() {
+  const db = getDatabase();
   const reset = db.transaction(() => {
     db.prepare("DELETE FROM expenses").run();
     db.prepare("DELETE FROM concepts").run();
