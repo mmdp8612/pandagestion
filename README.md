@@ -115,9 +115,12 @@ El volumen `pandagestion_data` sobrevive a reconstrucciones y reemplazos del con
 ## Funciones principales
 
 - Conceptos reutilizables con categoría, importe habitual y día de vencimiento.
+- Fecha de cierre opcional en conceptos y gastos, pensada para tarjetas de crédito.
+- Categorías administrables con nombre, color y estado activo/archivado.
 - Generación automática de los gastos de un mes sin duplicados.
 - Ajuste del importe, vencimiento y notas de cada período.
 - Estados pagado/pendiente y señalización de vencidos.
+- Días restantes al vencimiento y orden por concepto, cierre o vencimiento.
 - Dashboard con totales, progreso, categorías y evolución de seis meses.
 - Historial comparativo mensual.
 - Reinicio total de la base desde Configuración, protegido por confirmación SweetAlert2.

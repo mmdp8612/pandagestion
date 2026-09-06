@@ -17,8 +17,8 @@ PandaGestion es una aplicación web de uso personal y sin autenticación para co
 
 La aplicación separa **conceptos** de **gastos mensuales**:
 
-- Un concepto es una plantilla reutilizable: nombre, categoría, importe habitual, día de vencimiento y estado activo/archivado.
-- Un gasto es la fotografía de ese concepto en un mes concreto. Guarda nombre y categoría como snapshot, importe, fecha, estado, fecha de pago y notas.
+- Un concepto es una plantilla reutilizable: nombre, categoría, importe habitual, día de cierre opcional, día de vencimiento y estado activo/archivado.
+- Un gasto es la fotografía de ese concepto en un mes concreto. Guarda nombre y categoría como snapshot, importe, fecha de cierre opcional, vencimiento, estado, fecha de pago y notas.
 - La combinación concepto/mes es única para evitar duplicados.
 - “Generar mes” crea los gastos faltantes a partir de todos los conceptos activos.
 - Editar un concepto no cambia gastos históricos.
@@ -38,6 +38,7 @@ Tablas:
 
 - `concepts`: plantillas de gastos habituales.
 - `expenses`: gastos mensuales y estados de pago.
+- `categories`: categorías administrables con nombre, color y estado.
 
 La conexión activa WAL, claves foráneas y `busy_timeout`. El esquema se crea automáticamente al primer acceso. El endpoint `POST /api/reset` elimina todos los datos y reinicia las secuencias; la UI exige escribir `REINICIAR`.
 
@@ -46,6 +47,7 @@ La conexión activa WAL, claves foráneas y `busy_timeout`. El esquema se crea a
 - `/`: dashboard del período elegido.
 - `/gastos`: gestión mensual y generación automática.
 - `/conceptos`: altas, cambios, archivo y baja de conceptos.
+- `/categorias`: administración de categorías.
 - `/historial`: totales y comparación con el período anterior.
 - `/configuracion`: información del almacenamiento y reinicio total.
 
@@ -53,6 +55,8 @@ La conexión activa WAL, claves foráneas y `busy_timeout`. El esquema se crea a
 
 - `GET/POST /api/concepts`
 - `PUT/DELETE /api/concepts/:id`
+- `GET/POST /api/categories`
+- `PUT/DELETE /api/categories/:id`
 - `GET/POST /api/expenses`
 - `PATCH/DELETE /api/expenses/:id`
 - `POST /api/expenses/generate`

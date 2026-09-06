@@ -45,14 +45,19 @@ function ChartTooltip({ active, payload, label }) {
 export default function Dashboard() {
   const [month, setMonth] = useState(currentMonth());
   const [data, setData] = useState(null);
+  const [categoryColors, setCategoryColors] = useState(CATEGORY_COLORS);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/stats?month=${month}`, { cache: "no-store" });
-      const json = await response.json();
-      setData(json.data);
+      const [statsResponse, categoriesResponse] = await Promise.all([
+        fetch(`/api/stats?month=${month}`, { cache: "no-store" }),
+        fetch("/api/categories", { cache: "no-store" }),
+      ]);
+      const [statsJson, categoriesJson] = await Promise.all([statsResponse.json(), categoriesResponse.json()]);
+      setData(statsJson.data);
+      setCategoryColors({ ...CATEGORY_COLORS, ...Object.fromEntries((categoriesJson.data || []).map((category) => [category.name, category.color])) });
     } finally {
       setLoading(false);
     }
@@ -123,7 +128,7 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie data={data.categories} dataKey="value" innerRadius={56} outerRadius={82} paddingAngle={3} stroke="none">
-                          {data.categories.map((entry) => <Cell key={entry.name} fill={CATEGORY_COLORS[entry.name] || "#64748b"} />)}
+                          {data.categories.map((entry) => <Cell key={entry.name} fill={categoryColors[entry.name] || "#64748b"} />)}
                         </Pie>
                         <Tooltip content={<ChartTooltip />} />
                       </PieChart>
@@ -132,7 +137,7 @@ export default function Dashboard() {
                   <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3">
                     {data.categories.map((category) => (
                       <div key={category.name} className="flex min-w-0 items-center gap-2 text-xs">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: CATEGORY_COLORS[category.name] || "#64748b" }} />
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: categoryColors[category.name] || "#64748b" }} />
                         <span className="truncate font-semibold text-slate-600">{category.name}</span>
                       </div>
                     ))}

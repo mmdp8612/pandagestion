@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, ListChecks, Menu, ReceiptText, Settings, WalletCards, X } from "lucide-react";
+import { BarChart3, ListChecks, Menu, ReceiptText, Settings, Tags, WalletCards, X } from "lucide-react";
 
 const navigation = [
   { href: "/", label: "Resumen", icon: BarChart3 },
   { href: "/gastos", label: "Gastos mensuales", icon: WalletCards },
   { href: "/conceptos", label: "Conceptos", icon: ListChecks },
+  { href: "/categorias", label: "Categorías", icon: Tags },
   { href: "/historial", label: "Historial", icon: ReceiptText },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
