@@ -62,7 +62,7 @@ export default function ExpensesManager({ initialMonth }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ conceptId: "", category: "", amount: "", closingDate: "", dueDate: "", notes: "" });
+  const [form, setForm] = useState({ conceptId: "", amount: "", closingDate: "", dueDate: "", notes: "" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,18 +110,18 @@ export default function ExpensesManager({ initialMonth }) {
   function showCreate() {
     const first = concepts.find((concept) => concept.isActive);
     setEditing(null);
-    setForm(first ? { conceptId: first.id, category: first.category, amount: first.defaultAmount, closingDate: buildClosingDate(month, first.closingDay, first.dueDay), dueDate: buildDueDate(month, first.dueDay), notes: "" } : { conceptId: "", category: categories.find((category) => category.isActive)?.name || "", amount: "", closingDate: "", dueDate: `${month}-01`, notes: "" });
+    setForm(first ? { conceptId: first.id, amount: first.defaultAmount, closingDate: buildClosingDate(month, first.closingDay, first.dueDay), dueDate: buildDueDate(month, first.dueDay), notes: "" } : { conceptId: "", amount: "", closingDate: "", dueDate: `${month}-01`, notes: "" });
     setOpen(true);
   }
 
   function selectConcept(id) {
     const concept = concepts.find((item) => item.id === Number(id));
-    setForm({ ...form, conceptId: Number(id), category: concept?.category || "", amount: concept?.defaultAmount ?? "", closingDate: concept ? buildClosingDate(month, concept.closingDay, concept.dueDay) : "", dueDate: concept ? buildDueDate(month, concept.dueDay) : `${month}-01` });
+    setForm({ ...form, conceptId: Number(id), amount: concept?.defaultAmount ?? "", closingDate: concept ? buildClosingDate(month, concept.closingDay, concept.dueDay) : "", dueDate: concept ? buildDueDate(month, concept.dueDay) : `${month}-01` });
   }
 
   function showEdit(expense) {
     setEditing(expense);
-    setForm({ conceptId: expense.conceptId, category: expense.category, amount: expense.amount, closingDate: expense.closingDate || "", dueDate: expense.dueDate, notes: expense.notes });
+    setForm({ conceptId: expense.conceptId, amount: expense.amount, closingDate: expense.closingDate || "", dueDate: expense.dueDate, notes: expense.notes });
     setOpen(true);
   }
 
@@ -234,10 +234,7 @@ export default function ExpensesManager({ initialMonth }) {
       <Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? `Editar ${editing.name}` : "Agregar gasto"} description={editing ? "El cambio afecta solamente a este mes." : `Nuevo gasto para ${formatMonth(month)}.`}>
         <form onSubmit={save} className="space-y-4">
           {!editing && <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">Concepto</span><select className="field" required value={form.conceptId} onChange={(e) => selectConcept(e.target.value)}><option value="" disabled>Seleccionar...</option>{concepts.filter((concept) => concept.isActive).map((concept) => <option key={concept.id} value={concept.id}>{concept.name} · {concept.category}</option>)}</select></label>}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label><span className="mb-1.5 block text-sm font-bold text-slate-700">Categoría</span><select className="field" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="" disabled>Seleccionar...</option>{categories.filter((category) => category.isActive || category.name === form.category).map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}</select></label>
-            <label><span className="mb-1.5 block text-sm font-bold text-slate-700">Importe</span><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span><input className="field money-field" type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div></label>
-          </div>
+          <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">Importe</span><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span><input className="field money-field" type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div></label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label><span className="mb-1.5 block text-sm font-bold text-slate-700">Fecha de cierre <span className="font-normal text-slate-400">(opcional)</span></span><input className="field" type="date" value={form.closingDate} onChange={(e) => setForm({ ...form, closingDate: e.target.value })} /></label>
             <label><span className="mb-1.5 block text-sm font-bold text-slate-700">Vencimiento</span><input className="field" type="date" required value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} /></label>

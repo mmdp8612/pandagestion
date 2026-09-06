@@ -17,10 +17,7 @@ export async function PATCH(request, context) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(body.dueDate))) throw new Error("Fecha inválida.");
       const closingDate = body.closingDate ? String(body.closingDate) : null;
       if (closingDate && !/^\d{4}-\d{2}-\d{2}$/.test(closingDate)) throw new Error("Fecha de cierre inválida.");
-      const category = String(body.category || "").trim();
-      if (!category || category.length > 50) throw new Error("Categoría inválida.");
       expense = updateExpense(Number(id), {
-        category,
         amountCents: Math.round(amount * 100),
         dueDate: String(body.dueDate),
         closingDate,
