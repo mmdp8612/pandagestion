@@ -19,6 +19,7 @@ La aplicación separa **conceptos** de **gastos mensuales**:
 
 - Un concepto es una plantilla reutilizable: nombre, categoría, importe habitual, día de cierre opcional, día de vencimiento y estado activo/archivado.
 - Un gasto es la fotografía de ese concepto en un mes concreto. Guarda nombre y categoría como snapshot, importe, fecha de cierre opcional, vencimiento, estado, fecha de pago y notas.
+- Al agregar un gasto, el concepto propone su categoría, pero el usuario puede seleccionar otra categoría activa para ese período.
 - La combinación concepto/mes es única para evitar duplicados.
 - “Generar mes” crea los gastos faltantes a partir de todos los conceptos activos.
 - Editar un concepto no cambia gastos históricos.
