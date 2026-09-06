@@ -1,0 +1,22 @@
+services:
+  pandagestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pandagestion:latest
+    container_name: pandagestion
+    restart: unless-stopped
+    ports:
+      - "${PANDA_BIND_ADDRESS:-127.0.0.1}:${PANDA_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_PATH: /app/data/panda-gestion.db
+    volumes:
+      - pandagestion_data:/app/data
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  pandagestion_data:
+    name: pandagestion_data

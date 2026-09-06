@@ -47,6 +47,63 @@ DATABASE_PATH=/ruta/persistente/panda-gestion.db
 
 Antes de actualizar o migrar el servidor, respaldá el archivo `.db`. Se recomienda colocar un proxy HTTPS (por ejemplo, Caddy o Nginx) delante del proceso y administrarlo con un supervisor como PM2 o systemd.
 
+## Producción con Docker
+
+La imagen usa la salida `standalone` de Next.js, ejecuta la aplicación con un usuario sin privilegios y guarda SQLite en el volumen persistente `pandagestion_data`.
+
+En el VPS, cloná el repositorio y ejecutá:
+
+```bash
+git clone https://github.com/mmdp8612/pandagestion.git
+cd pandagestion
+docker compose up -d --build
+```
+
+Comprobá el estado y consultá los logs:
+
+```bash
+docker compose ps
+docker compose logs -f pandagestion
+```
+
+Por seguridad, el puerto se publica sólo en `127.0.0.1:3000`. Esta dirección está lista para usarse como destino de un proxy inverso Nginx o Caddy con HTTPS y autenticación. Para exponer temporalmente el puerto a la red, creá un archivo `.env`:
+
+```env
+PANDA_BIND_ADDRESS=0.0.0.0
+PANDA_PORT=3000
+```
+
+Como la aplicación todavía no tiene inicio de sesión, no se recomienda exponerla públicamente sin protección adicional.
+
+Para detenerla sin eliminar los datos:
+
+```bash
+docker compose down
+```
+
+No agregues `-v` al comando anterior: esa opción eliminaría el volumen de SQLite.
+
+### Actualizar el contenedor
+
+```bash
+git pull
+docker compose up -d --build
+docker image prune -f
+```
+
+### Respaldar SQLite
+
+Detené brevemente la aplicación para obtener una copia consistente y copiá la base desde el contenedor:
+
+```bash
+mkdir -p backups
+docker compose stop pandagestion
+docker cp pandagestion:/app/data/panda-gestion.db ./backups/panda-gestion.db
+docker compose start pandagestion
+```
+
+El volumen `pandagestion_data` sobrevive a reconstrucciones y reemplazos del contenedor.
+
 ## Comandos
 
 - `npm run dev`: servidor de desarrollo.

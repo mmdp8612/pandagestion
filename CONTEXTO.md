@@ -30,6 +30,8 @@ Los importes se almacenan en centavos enteros para evitar errores de coma flotan
 
 Archivo predeterminado: `data/panda-gestion.db`. Puede modificarse con `DATABASE_PATH`.
 
+En Docker, `DATABASE_PATH` apunta a `/app/data/panda-gestion.db` y el directorio está respaldado por el volumen persistente `pandagestion_data`. La imagen usa el modo `standalone` de Next.js y se ejecuta con el usuario no privilegiado `nextjs` (UID 1001).
+
 Tablas:
 
 - `concepts`: plantillas de gastos habituales.
