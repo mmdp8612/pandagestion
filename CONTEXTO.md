@@ -21,7 +21,7 @@ La aplicación separa **conceptos** de **gastos mensuales**:
 - Un gasto es la fotografía de ese concepto en un mes concreto. Guarda nombre y categoría como snapshot, importe, fecha de cierre opcional, vencimiento, estado, fecha de pago y notas.
 - La combinación concepto/mes es única para evitar duplicados.
 - Los gastos se cargan individualmente. El importe, la fecha de cierre opcional y el vencimiento pertenecen exclusivamente al gasto.
-- Editar un concepto no cambia gastos históricos.
+- Renombrar un concepto actualiza también el nombre visible de todos sus gastos relacionados dentro de la misma transacción; no modifica importes, fechas, notas ni estados históricos.
 - Un concepto ya utilizado se archiva en vez de eliminarse, preservando integridad histórica.
 
 Los importes se almacenan en centavos enteros para evitar errores de coma flotante y se muestran siempre con exactamente dos decimales.

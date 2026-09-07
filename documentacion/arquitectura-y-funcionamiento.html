@@ -429,11 +429,12 @@ VALUES (@name, @category, @isActive);</pre>
     <p>La carpeta dinámica <code>[id]</code> permite obtener <code>15</code> desde <code>context.params</code>. La API vuelve a utilizar <code>parseConcept</code> y luego llama a <code>updateConcept</code>.</p>
     <pre>Formulario → PUT → parseConcept → updateConcept
 → UPDATE SQL → JSON → recarga de grilla</pre>
+    <p>Si cambia el nombre, el repositorio actualiza también <code>expenses.concept_name</code> para todos los gastos relacionados. Ambas operaciones se ejecutan dentro de una transacción: se confirman juntas o se revierten juntas. Los importes, fechas, notas y estados históricos no cambian.</p>
 
     <h3>10.2 Eliminar o archivar</h3>
     <p>SweetAlert2 pide confirmación y luego se envía:</p>
     <pre>DELETE /api/concepts/15</pre>
-    <p>El repositorio comprueba si existen gastos asociados. Si no existen, elimina. Si hay historial, cambia <code>is_active</code> a cero. El archivado preserva las referencias históricas y evita que el concepto se genere en meses futuros.</p>
+    <p>El repositorio comprueba si existen gastos asociados. Si no existen, elimina. Si hay historial, cambia <code>is_active</code> a cero. El archivado preserva las referencias históricas y evita que el concepto aparezca al cargar nuevos gastos.</p>
 
     <h2>11. Administración de categorías</h2>
     <p><code>CategoriesManager</code> utiliza los siguientes endpoints:</p>
@@ -449,7 +450,7 @@ VALUES (@name, @category, @isActive);</pre>
     <p><code>parseCategory</code> valida nombre, longitud, color hexadecimal y estado. El repositorio evita nombres duplicados.</p>
     <h3>11.1 Renombrado transaccional</h3>
     <p>Al renombrar se actualizan la categoría y los conceptos que la utilizan dentro de una transacción. Ambas operaciones se completan juntas o se revierten juntas.</p>
-    <p>Los gastos históricos no cambian: almacenan una fotografía del nombre utilizado en ese período.</p>
+    <p>La categoría de los gastos históricos no cambia: cada gasto conserva una fotografía de la categoría utilizada en ese período.</p>
     <h3>11.2 Eliminación segura</h3>
     <p>Una categoría sin conceptos puede eliminarse. Si está en uso se archiva, deja de ofrecerse para nuevos conceptos y conserva la coherencia de los existentes.</p>
 
