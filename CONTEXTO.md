@@ -17,10 +17,10 @@ PandaGestion es una aplicación web de uso personal y sin autenticación para co
 
 La aplicación separa **conceptos** de **gastos mensuales**:
 
-- Un concepto es una plantilla reutilizable: nombre, categoría, importe habitual, día de cierre opcional, día de vencimiento y estado activo/archivado.
+- Un concepto identifica y clasifica un gasto: nombre, categoría y estado activo/archivado.
 - Un gasto es la fotografía de ese concepto en un mes concreto. Guarda nombre y categoría como snapshot, importe, fecha de cierre opcional, vencimiento, estado, fecha de pago y notas.
 - La combinación concepto/mes es única para evitar duplicados.
-- “Generar mes” crea los gastos faltantes a partir de todos los conceptos activos.
+- Los gastos se cargan individualmente. El importe, la fecha de cierre opcional y el vencimiento pertenecen exclusivamente al gasto.
 - Editar un concepto no cambia gastos históricos.
 - Un concepto ya utilizado se archiva en vez de eliminarse, preservando integridad histórica.
 
@@ -36,7 +36,7 @@ La conexión SQLite se inicializa de forma diferida en la primera petición. Est
 
 Tablas:
 
-- `concepts`: plantillas de gastos habituales.
+- `concepts`: nombres y categorías disponibles para identificar gastos.
 - `expenses`: gastos mensuales y estados de pago.
 - `categories`: categorías administrables con nombre, color y estado.
 
@@ -45,7 +45,7 @@ La conexión activa WAL, claves foráneas y `busy_timeout`. El esquema se crea a
 ## Rutas de interfaz
 
 - `/`: dashboard del período elegido.
-- `/gastos`: gestión mensual y generación automática.
+- `/gastos`: carga y gestión individual de gastos mensuales.
 - `/conceptos`: altas, cambios, archivo y baja de conceptos.
 - `/categorias`: administración de categorías.
 - `/historial`: totales y comparación con el período anterior.
@@ -59,7 +59,6 @@ La conexión activa WAL, claves foráneas y `busy_timeout`. El esquema se crea a
 - `PUT/DELETE /api/categories/:id`
 - `GET/POST /api/expenses`
 - `PATCH/DELETE /api/expenses/:id`
-- `POST /api/expenses/generate`
 - `GET /api/stats`
 - `GET /api/history`
 - `POST /api/reset`
@@ -71,7 +70,7 @@ Interfaz responsive con sidebar oscuro, acento violeta, tarjetas claras y estado
 ## Próximas mejoras posibles
 
 - Presupuestos y alertas por categoría.
-- Gastos variables no asociados a un concepto recurrente.
+- Gastos variables no asociados a un concepto.
 - Exportación/importación CSV y respaldos desde la interfaz.
 - Moneda configurable.
 - Cuotas de tarjeta y gastos recurrentes con frecuencia distinta de mensual.

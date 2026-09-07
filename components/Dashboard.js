@@ -89,7 +89,7 @@ export default function Dashboard() {
             <div className="mt-6">
               <EmptyState
                 title="Todavía no hay gastos en este mes"
-                description="Creá tus conceptos habituales y generá el mes para empezar a controlar tus vencimientos."
+                description="Creá tus conceptos y registrá los gastos del mes para empezar a controlar tus vencimientos."
                 action={<Link className="btn-primary" href="/gastos">Ir a gastos <ArrowRight size={16} /></Link>}
               />
             </div>

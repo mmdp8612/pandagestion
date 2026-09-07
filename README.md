@@ -1,6 +1,6 @@
 # PandaGestion
 
-Aplicación web personal para registrar conceptos de gastos, generar obligaciones mensuales, marcar pagos y comparar períodos mediante un dashboard estadístico.
+Aplicación web personal para registrar gastos mensuales, marcar pagos y comparar períodos mediante un dashboard estadístico.
 
 ## Requisitos
 
@@ -114,11 +114,10 @@ El volumen `pandagestion_data` sobrevive a reconstrucciones y reemplazos del con
 
 ## Funciones principales
 
-- Conceptos reutilizables con categoría, importe habitual y día de vencimiento.
-- Fecha de cierre opcional en conceptos y gastos, pensada para tarjetas de crédito.
+- Conceptos administrables con nombre y categoría.
+- Importe, vencimiento y fecha de cierre opcional cargados individualmente en cada gasto.
 - Categorías administrables con nombre, color y estado activo/archivado.
-- Generación automática de los gastos de un mes sin duplicados.
-- Ajuste del importe, vencimiento y notas de cada período.
+- Carga y ajuste del importe, cierre, vencimiento y notas de cada período.
 - Estados pagado/pendiente y señalización de vencidos.
 - Días restantes al vencimiento y orden por concepto, cierre o vencimiento.
 - Dashboard con totales, progreso, categorías y evolución de seis meses.

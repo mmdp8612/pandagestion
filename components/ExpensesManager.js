@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
-import { ArrowDown, ArrowUp, Check, CirclePlus, CopyPlus, Pencil, RotateCcw, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, CirclePlus, Pencil, RotateCcw, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import MonthPicker from "@/components/ui/MonthPicker";
 import Modal from "@/components/ui/Modal";
@@ -16,21 +16,6 @@ async function api(url, options) {
   const json = await response.json();
   if (!response.ok) throw new Error(json.error || "No se pudo completar la operación.");
   return json;
-}
-
-function buildDueDate(month, day) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const lastDay = new Date(year, monthNumber, 0).getDate();
-  return `${month}-${String(Math.min(Number(day), lastDay)).padStart(2, "0")}`;
-}
-
-function buildClosingDate(month, closingDay, dueDay) {
-  if (!closingDay) return "";
-  if (Number(closingDay) <= Number(dueDay)) return buildDueDate(month, closingDay);
-  const [year, monthNumber] = month.split("-").map(Number);
-  const previous = new Date(year, monthNumber - 2, 1);
-  const previousMonth = `${previous.getFullYear()}-${String(previous.getMonth() + 1).padStart(2, "0")}`;
-  return buildDueDate(previousMonth, closingDay);
 }
 
 function daysUntil(date) {
@@ -110,13 +95,8 @@ export default function ExpensesManager({ initialMonth }) {
   function showCreate() {
     const first = concepts.find((concept) => concept.isActive);
     setEditing(null);
-    setForm(first ? { conceptId: first.id, amount: first.defaultAmount, closingDate: buildClosingDate(month, first.closingDay, first.dueDay), dueDate: buildDueDate(month, first.dueDay), notes: "" } : { conceptId: "", amount: "", closingDate: "", dueDate: `${month}-01`, notes: "" });
+    setForm({ conceptId: first?.id || "", amount: "", closingDate: "", dueDate: "", notes: "" });
     setOpen(true);
-  }
-
-  function selectConcept(id) {
-    const concept = concepts.find((item) => item.id === Number(id));
-    setForm({ ...form, conceptId: Number(id), amount: concept?.defaultAmount ?? "", closingDate: concept ? buildClosingDate(month, concept.closingDay, concept.dueDay) : "", dueDate: concept ? buildDueDate(month, concept.dueDay) : `${month}-01` });
   }
 
   function showEdit(expense) {
@@ -154,27 +134,13 @@ export default function ExpensesManager({ initialMonth }) {
     catch (error) { Swal.fire("No se pudo eliminar", error.message, "error"); }
   }
 
-  async function generate() {
-    if (!concepts.some((item) => item.isActive)) {
-      Swal.fire({ title: "No hay conceptos activos", text: "Creá al menos un concepto para poder generar el mes.", icon: "info", confirmButtonColor: "#7c3aed" });
-      return;
-    }
-    const answer = await Swal.fire({ title: `Generar ${formatMonth(month)}`, text: "Se agregarán todos los conceptos activos que todavía no estén cargados.", icon: "question", showCancelButton: true, confirmButtonColor: "#7c3aed", confirmButtonText: "Generar gastos", cancelButtonText: "Cancelar" });
-    if (!answer.isConfirmed) return;
-    try {
-      const json = await api("/api/expenses/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ month }) });
-      await load();
-      Swal.fire({ icon: json.data.created ? "success" : "info", title: json.data.created ? `${json.data.created} gastos agregados` : "El mes ya estaba completo", timer: 1700, showConfirmButton: false });
-    } catch (error) { Swal.fire("No se pudo generar", error.message, "error"); }
-  }
-
   return (
     <div className="animate-enter">
       <PageHeader
         eyebrow="Control mensual"
         title={`Gastos de ${formatMonth(month)}`}
         description="Marcá lo pagado, ajustá importes y mantené bajo control cada vencimiento."
-        actions={<><MonthPicker value={month} onChange={setMonth} /><button className="btn-secondary" onClick={generate}><CopyPlus size={17} /> Generar mes</button><button className="btn-primary" onClick={showCreate}><CirclePlus size={17} /> Agregar gasto</button></>}
+        actions={<><MonthPicker value={month} onChange={setMonth} /><button className="btn-primary" onClick={showCreate}><CirclePlus size={17} /> Agregar gasto</button></>}
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -184,7 +150,7 @@ export default function ExpensesManager({ initialMonth }) {
       </div>
 
       {loading ? <LoadingState /> : expenses.length === 0 ? (
-        <EmptyState title={`No hay gastos en ${formatMonth(month)}`} description={concepts.length ? "Generá el mes desde tus conceptos habituales o agregá un gasto manualmente." : "Primero creá los conceptos que querés controlar mes a mes."} action={concepts.length ? <button className="btn-primary" onClick={generate}><CopyPlus size={17} /> Generar mes</button> : <Link href="/conceptos" className="btn-primary">Crear conceptos</Link>} />
+        <EmptyState title={`No hay gastos en ${formatMonth(month)}`} description={concepts.length ? "Agregá un gasto e ingresá su importe y sus fechas para este mes." : "Primero creá los conceptos que querés controlar."} action={concepts.length ? <button className="btn-primary" onClick={showCreate}><CirclePlus size={17} /> Agregar gasto</button> : <Link href="/conceptos" className="btn-primary">Crear conceptos</Link>} />
       ) : (
         <section className="card overflow-hidden">
           <div className="flex flex-col gap-4 border-b border-slate-100 p-4 xl:flex-row xl:items-center xl:justify-between sm:px-6">
@@ -233,7 +199,7 @@ export default function ExpensesManager({ initialMonth }) {
 
       <Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? `Editar ${editing.name}` : "Agregar gasto"} description={editing ? "El cambio afecta solamente a este mes." : `Nuevo gasto para ${formatMonth(month)}.`}>
         <form onSubmit={save} className="space-y-4">
-          {!editing && <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">Concepto</span><select className="field" required value={form.conceptId} onChange={(e) => selectConcept(e.target.value)}><option value="" disabled>Seleccionar...</option>{concepts.filter((concept) => concept.isActive).map((concept) => <option key={concept.id} value={concept.id}>{concept.name} · {concept.category}</option>)}</select></label>}
+          {!editing && <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">Concepto</span><select className="field" required value={form.conceptId} onChange={(e) => setForm({ ...form, conceptId: Number(e.target.value) })}><option value="" disabled>Seleccionar...</option>{concepts.filter((concept) => concept.isActive).map((concept) => <option key={concept.id} value={concept.id}>{concept.name} · {concept.category}</option>)}</select></label>}
           <label className="block"><span className="mb-1.5 block text-sm font-bold text-slate-700">Importe</span><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span><input className="field money-field" type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div></label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label><span className="mb-1.5 block text-sm font-bold text-slate-700">Fecha de cierre <span className="font-normal text-slate-400">(opcional)</span></span><input className="field" type="date" value={form.closingDate} onChange={(e) => setForm({ ...form, closingDate: e.target.value })} /></label>

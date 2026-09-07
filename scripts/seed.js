@@ -15,9 +15,6 @@ db.exec(`
   );
   CREATE TABLE IF NOT EXISTS concepts (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT NOT NULL,
-    default_amount_cents INTEGER NOT NULL DEFAULT 0 CHECK(default_amount_cents >= 0),
-    due_day INTEGER NOT NULL DEFAULT 1 CHECK(due_day BETWEEN 1 AND 31),
-    closing_day INTEGER,
     is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
@@ -48,15 +45,15 @@ if (existing) {
 }
 
 const concepts = [
-  ["Alquiler", "Vivienda", 52000000, 5, null],
-  ["Internet", "Servicios", 3200000, 10, null],
-  ["Celular", "Servicios", 1850000, 12, null],
-  ["Tarjeta de crédito", "Tarjetas", 24500000, 15, 28],
-  ["Obra social", "Salud", 9600000, 8, null],
-  ["Streaming", "Suscripciones", 1500000, 20, null],
+  { name: "Alquiler", category: "Vivienda", baseAmount: 52000000, dueDay: 5, closingDay: null },
+  { name: "Internet", category: "Servicios", baseAmount: 3200000, dueDay: 10, closingDay: null },
+  { name: "Celular", category: "Servicios", baseAmount: 1850000, dueDay: 12, closingDay: null },
+  { name: "Tarjeta de crédito", category: "Tarjetas", baseAmount: 24500000, dueDay: 15, closingDay: 28 },
+  { name: "Obra social", category: "Salud", baseAmount: 9600000, dueDay: 8, closingDay: null },
+  { name: "Streaming", category: "Suscripciones", baseAmount: 1500000, dueDay: 20, closingDay: null },
 ];
 
-const insertConcept = db.prepare("INSERT INTO concepts (name, category, default_amount_cents, due_day, closing_day) VALUES (?, ?, ?, ?, ?)");
+const insertConcept = db.prepare("INSERT INTO concepts (name, category) VALUES (?, ?)");
 const insertExpense = db.prepare(`
   INSERT INTO expenses (concept_id, concept_name, category, amount_cents, month, due_date, closing_date, status, paid_at)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,16 +75,19 @@ function closingDateForMonth(month, closingDay, dueDay) {
 
 const now = new Date();
 const seed = db.transaction(() => {
-  const inserted = concepts.map((concept) => ({ id: Number(insertConcept.run(...concept).lastInsertRowid), data: concept }));
+  const inserted = concepts.map((concept) => ({
+    id: Number(insertConcept.run(concept.name, concept.category).lastInsertRowid),
+    data: concept,
+  }));
   for (let offset = 5; offset >= 0; offset -= 1) {
     const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
     const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     inserted.forEach(({ id, data }, index) => {
-      const [name, category, baseAmount, day, closingDay] = data;
+      const { name, category, baseAmount, dueDay, closingDay } = data;
       const variation = 1 + ((5 - offset) * 0.015) + (index % 2 ? 0.01 : 0);
       const amount = Math.round(baseAmount * variation);
       const paid = offset > 0 || index < 3;
-      insertExpense.run(id, name, category, amount, month, dateForDay(month, day), closingDateForMonth(month, closingDay, day), paid ? "paid" : "pending", paid ? new Date().toISOString() : null);
+      insertExpense.run(id, name, category, amount, month, dateForDay(month, dueDay), closingDateForMonth(month, closingDay, dueDay), paid ? "paid" : "pending", paid ? new Date().toISOString() : null);
     });
   }
 });

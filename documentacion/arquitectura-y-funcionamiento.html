@@ -165,7 +165,7 @@
       <li>Edición y eliminación</li>
       <li>Administración de categorías</li>
       <li>Gastos mensuales</li>
-      <li>Generación automática del mes</li>
+      <li>Separación entre conceptos y gastos</li>
       <li>Pagos, filtros y ordenamiento</li>
       <li>Dashboard e historial</li>
       <li>Manejo de errores</li>
@@ -269,16 +269,16 @@ FROM concepts
 ORDER BY is_active DESC, name COLLATE NOCASE;</pre>
     <p>SQLite devuelve nombres adaptados a la base:</p>
     <pre>{
-  default_amount_cents: 1250050,
-  due_day: 10,
-  closing_day: null,
+  id: 1,
+  name: "Internet",
+  category: "Servicios",
   is_active: 1
 }</pre>
     <p>El repositorio los transforma a un objeto apropiado para JavaScript:</p>
     <pre>{
-  defaultAmount: 12500.50,
-  dueDay: 10,
-  closingDay: null,
+  id: 1,
+  name: "Internet",
+  category: "Servicios",
   isActive: true
 }</pre>
 
@@ -289,7 +289,7 @@ ORDER BY is_active DESC, name COLLATE NOCASE;</pre>
       "id": 1,
       "name": "Internet",
       "category": "Servicios",
-      "defaultAmount": 12500.5
+      "isActive": true
     }
   ]
 }</pre>
@@ -322,8 +322,10 @@ database.pragma("foreign_keys = ON");</pre>
       </tbody>
     </table>
     <p>Las tablas se crean con <code>CREATE TABLE IF NOT EXISTS</code>. Las instalaciones anteriores se actualizan con una comprobación como:</p>
-    <pre>ensureColumn(database, "concepts", "closing_day", "INTEGER");
-ensureColumn(database, "expenses", "closing_date", "TEXT");</pre>
+    <pre>ensureColumn(database, "expenses", "closing_date", "TEXT");
+dropColumn(database, "concepts", "default_amount_cents");
+dropColumn(database, "concepts", "due_day");
+dropColumn(database, "concepts", "closing_day");</pre>
     <div class="callout success"><strong>Resultado:</strong> actualizar el contenedor no borra la información. La aplicación detecta y agrega la estructura que falta.</div>
 
     <h2>7. Circuito completo para crear un concepto</h2>
@@ -362,7 +364,7 @@ Recarga de grilla + SweetAlert2</div>
     <p>El valor visible procede del estado. Cada pulsación ejecuta <code>onChange</code>, actualiza <code>form</code> y provoca un nuevo render.</p>
 
     <h3>7.3 Primera barrera: validación HTML</h3>
-    <p>Los atributos <code>required</code>, <code>maxLength</code>, <code>min</code>, <code>max</code> y <code>type="number"</code> permiten al navegador detectar campos vacíos, números fuera de rango y longitudes excesivas antes de enviar.</p>
+    <p>Los atributos <code>required</code> y <code>maxLength</code> permiten al navegador detectar campos vacíos y longitudes excesivas antes de enviar.</p>
     <div class="callout warning"><strong>Importante:</strong> la validación HTML mejora la experiencia, pero no brinda seguridad por sí sola. Una petición puede construirse manualmente, por lo que el servidor siempre vuelve a validar.</div>
 
     <h3>7.4 Envío desde el navegador</h3>
@@ -388,9 +390,6 @@ Recarga de grilla + SweetAlert2</div>
 {
   name: "  Internet  ",
   category: "Servicios",
-  defaultAmount: "12500.50",
-  dueDay: "10",
-  closingDay: "",
   isActive: true
 }
 
@@ -398,15 +397,12 @@ Salida validada:
 {
   name: "Internet",
   category: "Servicios",
-  defaultAmountCents: 1250050,
-  dueDay: 10,
-  closingDay: null,
   isActive: 1
 }</pre>
-    <p>Los importes se almacenan como centavos enteros para evitar errores de coma flotante: <code>$12.500,50</code> se guarda como <code>1250050</code>.</p>
+    <p>El concepto no contiene importes ni fechas. Esos valores se solicitan y validan al crear cada gasto. Los importes de los gastos se almacenan como centavos enteros para evitar errores de coma flotante: <code>$12.500,50</code> se guarda como <code>1250050</code>.</p>
     <p>Si una regla no se cumple, la función lanza una excepción:</p>
     <pre>throw new Error(
-  "El día de vencimiento debe estar entre 1 y 31."
+  "Ingresá un nombre válido (máximo 80 caracteres)."
 );</pre>
     <p>La excepción interrumpe el circuito antes de llegar a SQLite.</p>
 
@@ -416,14 +412,8 @@ Salida validada:
 FROM categories
 WHERE name = ? AND is_active = 1;</pre>
     <p>Después utiliza una consulta preparada:</p>
-    <pre>INSERT INTO concepts (
-  name, category, default_amount_cents,
-  due_day, closing_day, is_active
-)
-VALUES (
-  @name, @category, @defaultAmountCents,
-  @dueDay, @closingDay, @isActive
-);</pre>
+    <pre>INSERT INTO concepts (name, category, is_active)
+VALUES (@name, @category, @isActive);</pre>
     <p>Las consultas preparadas separan el SQL de los valores del usuario y reducen el riesgo de inyección. SQLite devuelve el identificador creado; el repositorio consulta el registro y lo devuelve con el formato utilizado por JavaScript.</p>
 
     <h3>9.1 Respuesta y actualización visual</h3>
@@ -473,11 +463,11 @@ GET /api/categories</pre>
     <p>Los conceptos alimentan el selector del modal. Las categorías se utilizan para representar sus colores en la grilla; la categoría del gasto proviene del concepto seleccionado.</p>
 
     <h3>12.1 Agregar gasto</h3>
-    <p>Al elegir un concepto, el frontend propone:</p>
+    <p>Al elegir un concepto, el usuario carga los datos propios de ese gasto:</p>
     <ul>
-      <li>Importe habitual.</li>
-      <li>Fecha de cierre, si corresponde.</li>
-      <li>Fecha de vencimiento.</li>
+      <li>Importe real del período.</li>
+      <li>Fecha de cierre opcional.</li>
+      <li>Fecha de vencimiento obligatoria.</li>
     </ul>
     <pre>POST /api/expenses
 
@@ -499,15 +489,13 @@ GET /api/categories</pre>
     <h3>12.3 Eliminar gasto</h3>
     <p>Después de confirmar con SweetAlert2, <code>DELETE /api/expenses/:id</code> elimina solamente la instancia del mes. El concepto reutilizable permanece disponible.</p>
 
-    <h2>13. Generación automática del mes</h2>
-    <pre>POST /api/expenses/generate
-{ "month": "2026-09" }</pre>
-    <p><code>generateMonth()</code> busca conceptos activos, calcula fechas e inserta los que todavía no están cargados. Todo se ejecuta dentro de una transacción.</p>
-    <p>Para una tarjeta que cierra el día 28 y vence el día 5:</p>
-    <pre>Período del gasto: septiembre de 2026
-Fecha de cierre:   28/08/2026
-Vencimiento:       05/09/2026</pre>
-    <p>Si el día de cierre es mayor que el de vencimiento, el sistema entiende que el cierre ocurrió en el mes anterior.</p>
+    <h2>13. Separación entre conceptos y gastos</h2>
+    <p>Los conceptos contienen solamente nombre, categoría y estado. Funcionan como una lista administrable para identificar qué se está pagando.</p>
+    <p>El importe, la fecha de cierre y el vencimiento pertenecen exclusivamente al gasto mensual. No se completan desde el concepto ni existe una generación automática del mes.</p>
+    <div class="diagram">Concepto: Tarjeta de crédito + Tarjetas
+        ↓ selección manual
+Gasto de septiembre: importe + cierre + vencimiento + notas</div>
+    <p>Esta separación evita que un valor estimado se confunda con el importe real. Cada período conserva exactamente la información ingresada por el usuario.</p>
 
     <h2>14. Pagos, filtros, días y ordenamiento</h2>
     <h3>14.1 Marcar pagado</h3>
