@@ -399,7 +399,7 @@ Salida validada:
   category: "Servicios",
   isActive: 1
 }</pre>
-    <p>El concepto no contiene importes ni fechas. Esos valores se solicitan y validan al crear cada gasto. Los importes de los gastos se almacenan como centavos enteros para evitar errores de coma flotante: <code>$12.500,50</code> se guarda como <code>1250050</code>.</p>
+    <p>El concepto no contiene importes ni fechas. Esos valores se solicitan y validan al crear cada gasto. Los importes de los gastos se almacenan como centavos enteros para evitar errores de coma flotante y se muestran siempre con exactamente dos decimales: <code>$12.500,50</code> se guarda como <code>1250050</code>.</p>
     <p>Si una regla no se cumple, la función lanza una excepción:</p>
     <pre>throw new Error(
   "Ingresá un nombre válido (máximo 80 caracteres)."

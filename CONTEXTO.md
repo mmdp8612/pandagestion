@@ -24,7 +24,7 @@ La aplicación separa **conceptos** de **gastos mensuales**:
 - Editar un concepto no cambia gastos históricos.
 - Un concepto ya utilizado se archiva en vez de eliminarse, preservando integridad histórica.
 
-Los importes se almacenan en centavos enteros para evitar errores de coma flotante.
+Los importes se almacenan en centavos enteros para evitar errores de coma flotante y se muestran siempre con exactamente dos decimales.
 
 ## Base de datos
 
