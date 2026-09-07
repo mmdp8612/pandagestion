@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PandaGestion — Arquitectura y funcionamiento</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5e6b82;
+      --line: #dde3ec;
+      --soft: #f5f3ff;
+      --violet: #6d28d9;
+      --violet-dark: #3b167c;
+      --green: #047857;
+      --amber: #b45309;
+      --red: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    @page { size: A4; margin: 17mm 16mm 19mm; }
+    html { font-size: 10.5pt; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: white;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    h1, h2, h3, h4 { margin: 0; line-height: 1.2; page-break-after: avoid; }
+    h1 { font-size: 30pt; letter-spacing: -1.2px; }
+    h2 {
+      margin-top: 28px;
+      padding-bottom: 7px;
+      border-bottom: 2px solid #ede9fe;
+      color: var(--violet-dark);
+      font-size: 18pt;
+      letter-spacing: -.3px;
+    }
+    h3 { margin-top: 19px; color: #293650; font-size: 13pt; }
+    h4 { margin-top: 14px; color: #38455c; font-size: 11pt; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 7px 0 10px; padding-left: 22px; }
+    li { margin: 3px 0; }
+    code {
+      border-radius: 4px;
+      background: #f1f5f9;
+      padding: 1px 4px;
+      color: #5b21b6;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9pt;
+    }
+    pre {
+      margin: 10px 0 14px;
+      border: 1px solid #dbe2eb;
+      border-left: 4px solid #8b5cf6;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 11px 13px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.5pt;
+      line-height: 1.45;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      margin: 12px 0 18px;
+      border-collapse: collapse;
+      font-size: 9.1pt;
+    }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+    th { background: #f1edff; color: #3b167c; text-align: left; }
+    .cover {
+      display: flex;
+      min-height: 245mm;
+      flex-direction: column;
+      justify-content: center;
+      page-break-after: always;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 35px; }
+    .logo {
+      display: grid;
+      width: 62px;
+      height: 62px;
+      place-items: center;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #8b5cf6, #6d28d9);
+      color: white;
+      font-size: 30px;
+      box-shadow: 0 12px 26px rgba(109, 40, 217, .24);
+    }
+    .brand-name { font-size: 18pt; font-weight: 800; }
+    .brand-subtitle { color: var(--muted); font-size: 9.5pt; }
+    .cover h1 { max-width: 590px; }
+    .cover .lead { max-width: 620px; margin-top: 20px; color: var(--muted); font-size: 14pt; }
+    .cover-meta { margin-top: 54px; color: var(--muted); font-size: 9.5pt; }
+    .accent-line { width: 86px; height: 6px; margin: 22px 0 0; border-radius: 99px; background: #8b5cf6; }
+    .toc { page-break-after: always; }
+    .toc ol { columns: 2; column-gap: 32px; padding-left: 20px; }
+    .toc li { margin-bottom: 6px; break-inside: avoid; }
+    .diagram {
+      margin: 14px 0 18px;
+      border: 1px solid #d8d1f3;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #faf8ff, #f5f7fb);
+      padding: 16px;
+      color: #38226a;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+      font-weight: 600;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      page-break-inside: avoid;
+    }
+    .callout {
+      margin: 13px 0;
+      border-radius: 9px;
+      background: var(--soft);
+      padding: 11px 13px;
+      page-break-inside: avoid;
+    }
+    .callout strong { color: var(--violet-dark); }
+    .warning { border-left: 4px solid #f59e0b; background: #fffbeb; }
+    .success { border-left: 4px solid #10b981; background: #ecfdf5; }
+    .page-break { page-break-before: always; }
+    .avoid-break { page-break-inside: avoid; }
+    .pill { display: inline-block; border-radius: 99px; background: #ede9fe; padding: 2px 8px; color: #5b21b6; font-size: 8.5pt; font-weight: 700; }
+    .muted { color: var(--muted); }
+    .footer-note { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 10px; color: var(--muted); font-size: 8.5pt; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="brand">
+      <div class="logo">🐼</div>
+      <div>
+        <div class="brand-name">PandaGestion</div>
+        <div class="brand-subtitle">Finanzas personales</div>
+      </div>
+    </div>
+    <h1>Arquitectura y circuito completo de funcionamiento</h1>
+    <div class="accent-line"></div>
+    <p class="lead">Guía técnica detallada de las capas que intervienen desde que el usuario ingresa a una opción hasta que consulta, crea, modifica, paga o elimina información.</p>
+    <div class="cover-meta">
+      <p><strong>Tecnologías:</strong> Next.js 16 · React 19 · JavaScript · Tailwind CSS · SweetAlert2 · SQLite · Docker</p>
+      <p><strong>Documento:</strong> versión 1.0 · 7 de septiembre de 2026</p>
+    </div>
+  </section>
+
+  <section class="toc">
+    <h2>Contenido</h2>
+    <ol>
+      <li>Visión general</li>
+      <li>Capas principales</li>
+      <li>Ingreso a una opción</li>
+      <li>Carga inicial de información</li>
+      <li>API y consultas GET</li>
+      <li>Inicialización de SQLite</li>
+      <li>Creación de un concepto</li>
+      <li>Validación y normalización</li>
+      <li>Persistencia mediante repositorios</li>
+      <li>Edición y eliminación</li>
+      <li>Administración de categorías</li>
+      <li>Gastos mensuales</li>
+      <li>Generación automática del mes</li>
+      <li>Pagos, filtros y ordenamiento</li>
+      <li>Dashboard e historial</li>
+      <li>Manejo de errores</li>
+      <li>Funcionamiento en Docker</li>
+      <li>Responsabilidades por archivo</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>1. Visión general</h2>
+    <p>PandaGestion está organizada en capas para que la presentación, la comunicación HTTP, las validaciones, las reglas de negocio y la persistencia no queden mezcladas. Cada capa recibe información de la anterior, realiza una tarea concreta y entrega un resultado a la siguiente.</p>
+    <div class="diagram">Navegador
+    ↓
+Página de Next.js
+    ↓
+Componente React
+    ↓
+API Route
+    ↓
+Validación y normalización
+    ↓
+Repositorio y reglas de negocio
+    ↓
+Conexión SQLite
+    ↓
+Base de datos persistente</div>
+    <p>Cuando una operación termina, el resultado recorre el camino inverso: SQLite devuelve filas, el repositorio las transforma, la API responde JSON y React actualiza la pantalla.</p>
+
+    <h2>2. Capas principales</h2>
+    <table>
+      <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Ubicación</th></tr></thead>
+      <tbody>
+        <tr><td>Layout y navegación</td><td>Estructura general, menú lateral, navegación móvil y área de contenido.</td><td><code>app/layout.js</code><br><code>components/AppShell.js</code></td></tr>
+        <tr><td>Páginas</td><td>Relacionan una URL con la pantalla que debe mostrarse.</td><td><code>app/**/page.js</code></td></tr>
+        <tr><td>Componentes cliente</td><td>Formularios, modales, estados React, eventos, filtros y solicitudes HTTP.</td><td><code>components/*Manager.js</code></td></tr>
+        <tr><td>API</td><td>Recibe peticiones HTTP, llama validaciones y repositorios, y devuelve JSON.</td><td><code>app/api/**/route.js</code></td></tr>
+        <tr><td>Validación</td><td>Limpia, convierte y comprueba los datos externos.</td><td><code>lib/validation.js</code></td></tr>
+        <tr><td>Repositorios</td><td>Reglas de negocio, SQL, transacciones y transformación de filas.</td><td><code>lib/repositories/</code></td></tr>
+        <tr><td>Base de datos</td><td>Conexión, configuración, creación del esquema y migraciones.</td><td><code>lib/db.js</code></td></tr>
+        <tr><td>Persistencia</td><td>Archivo físico que conserva conceptos, gastos y categorías.</td><td><code>data/panda-gestion.db</code> o volumen Docker</td></tr>
+        <tr><td>Infraestructura</td><td>Construcción de la imagen, proceso Node y volumen persistente.</td><td><code>Dockerfile</code><br><code>docker-compose.yml</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Qué ocurre al ingresar a una opción</h2>
+    <p>Supongamos que el usuario abre <code>http://servidor:3000/conceptos</code>.</p>
+
+    <h3>3.1 El navegador solicita la URL</h3>
+    <pre>GET /conceptos</pre>
+    <p>Next.js busca automáticamente <code>app/conceptos/page.js</code>. El nombre <code>page.js</code> es una convención obligatoria del App Router: ese archivo convierte la carpeta <code>conceptos</code> en una ruta navegable.</p>
+    <pre>export default function ConceptsPage() {
+  return &lt;ConceptsManager /&gt;;
+}</pre>
+
+    <h3>3.2 Se aplica el layout general</h3>
+    <p>Todas las páginas pasan por <code>app/layout.js</code>:</p>
+    <pre>&lt;AppShell&gt;{children}&lt;/AppShell&gt;</pre>
+    <p><code>children</code> representa la pantalla pedida. <code>AppShell</code> agrega el menú, el logo y el contenedor principal. Los enlaces de Next.js cambian de opción sin recargar por completo el sitio.</p>
+
+    <h3>3.3 Componentes de servidor y de cliente</h3>
+    <p>Los archivos <code>page.js</code> son componentes de servidor por defecto. Los administradores interactivos comienzan con:</p>
+    <pre>"use client";</pre>
+    <p>Esta directiva permite utilizar <code>useState</code>, <code>useEffect</code>, eventos, formularios, modales, SweetAlert2 y <code>fetch</code> en el navegador.</p>
+
+    <h2>4. Carga inicial de información</h2>
+    <p>Al montarse <code>ConceptsManager</code>, React crea estados locales:</p>
+    <pre>const [concepts, setConcepts] = useState([]);
+const [categories, setCategories] = useState([]);
+const [loading, setLoading] = useState(true);
+const [open, setOpen] = useState(false);
+const [editing, setEditing] = useState(null);
+const [form, setForm] = useState(emptyForm);</pre>
+    <table>
+      <thead><tr><th>Estado</th><th>Uso</th></tr></thead>
+      <tbody>
+        <tr><td><code>concepts</code></td><td>Lista obtenida del servidor.</td></tr>
+        <tr><td><code>categories</code></td><td>Categorías disponibles y colores.</td></tr>
+        <tr><td><code>loading</code></td><td>Determina si se muestra el indicador de carga.</td></tr>
+        <tr><td><code>open</code></td><td>Controla la apertura del modal.</td></tr>
+        <tr><td><code>editing</code></td><td>Indica si se crea un registro o se edita uno existente.</td></tr>
+        <tr><td><code>form</code></td><td>Contiene los valores actuales de los campos.</td></tr>
+      </tbody>
+    </table>
+    <p><code>useEffect</code> llama a <code>load()</code> después de montar la pantalla. Se realizan dos peticiones en paralelo:</p>
+    <pre>Promise.all([
+  fetch("/api/concepts", { cache: "no-store" }),
+  fetch("/api/categories", { cache: "no-store" })
+]);</pre>
+    <p><code>no-store</code> evita reutilizar una respuesta vieja. La interfaz siempre solicita el estado actual de SQLite.</p>
+
+    <h2>5. API y consultas GET</h2>
+    <p>La petición <code>GET /api/concepts</code> se relaciona con <code>app/api/concepts/route.js</code>. En los archivos <code>route.js</code>, Next.js reconoce funciones llamadas <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>PATCH</code> y <code>DELETE</code>.</p>
+    <pre>export function GET() {
+  return NextResponse.json({ data: listConcepts() });
+}</pre>
+    <p>La API no contiene HTML ni SQL extenso. Actúa como controlador: recibe HTTP, llama a las capas internas y construye una respuesta.</p>
+
+    <h3>5.1 El repositorio consulta SQLite</h3>
+    <pre>SELECT *
+FROM concepts
+ORDER BY is_active DESC, name COLLATE NOCASE;</pre>
+    <p>SQLite devuelve nombres adaptados a la base:</p>
+    <pre>{
+  default_amount_cents: 1250050,
+  due_day: 10,
+  closing_day: null,
+  is_active: 1
+}</pre>
+    <p>El repositorio los transforma a un objeto apropiado para JavaScript:</p>
+    <pre>{
+  defaultAmount: 12500.50,
+  dueDay: 10,
+  closingDay: null,
+  isActive: true
+}</pre>
+
+    <h3>5.2 La respuesta regresa a React</h3>
+    <pre>{
+  "data": [
+    {
+      "id": 1,
+      "name": "Internet",
+      "category": "Servicios",
+      "defaultAmount": 12500.5
+    }
+  ]
+}</pre>
+    <p>El componente ejecuta <code>setConcepts(...)</code>, <code>setCategories(...)</code> y <code>setLoading(false)</code>. React vuelve a renderizar y reemplaza el indicador de carga por la grilla.</p>
+  </section>
+
+  <section class="page-break">
+    <h2>6. Inicialización y migración de SQLite</h2>
+    <p>Los repositorios solicitan la conexión mediante <code>getDatabase()</code>, definida en <code>lib/db.js</code>. La conexión es diferida: importar un repositorio no abre la base; se abre al ejecutar la primera operación real.</p>
+    <p>Este diseño evita que los workers paralelos de <code>next build</code> intenten configurar el mismo archivo mientras se construye la imagen Docker.</p>
+    <ol>
+      <li>Calcula la ruta del archivo.</li>
+      <li>Crea el directorio si no existe.</li>
+      <li>Abre SQLite mediante <code>better-sqlite3</code>.</li>
+      <li>Configura espera, WAL y claves foráneas.</li>
+      <li>Crea tablas e índices faltantes.</li>
+      <li>Ejecuta migraciones de columnas.</li>
+      <li>Inserta las categorías iniciales cuando corresponde.</li>
+      <li>Conserva la conexión para reutilizarla.</li>
+    </ol>
+    <pre>database.pragma("busy_timeout = 5000");
+database.pragma("journal_mode = WAL");
+database.pragma("foreign_keys = ON");</pre>
+    <table>
+      <thead><tr><th>Configuración</th><th>Finalidad</th></tr></thead>
+      <tbody>
+        <tr><td><code>busy_timeout</code></td><td>Espera hasta cinco segundos si otra operación está utilizando la base.</td></tr>
+        <tr><td><code>journal_mode = WAL</code></td><td>Mejora la convivencia entre lecturas y escrituras.</td></tr>
+        <tr><td><code>foreign_keys = ON</code></td><td>Activa la integridad de las relaciones entre tablas.</td></tr>
+      </tbody>
+    </table>
+    <p>Las tablas se crean con <code>CREATE TABLE IF NOT EXISTS</code>. Las instalaciones anteriores se actualizan con una comprobación como:</p>
+    <pre>ensureColumn(database, "concepts", "closing_day", "INTEGER");
+ensureColumn(database, "expenses", "closing_date", "TEXT");</pre>
+    <div class="callout success"><strong>Resultado:</strong> actualizar el contenedor no borra la información. La aplicación detecta y agrega la estructura que falta.</div>
+
+    <h2>7. Circuito completo para crear un concepto</h2>
+    <div class="diagram">Clic en “Nuevo concepto”
+        ↓
+Estado React abre el modal
+        ↓
+Usuario completa campos controlados
+        ↓
+Validación nativa de HTML
+        ↓
+save() serializa el formulario
+        ↓
+POST /api/concepts
+        ↓
+parseConcept()
+        ↓
+createConcept()
+        ↓
+INSERT en SQLite
+        ↓
+HTTP 201 + JSON
+        ↓
+Recarga de grilla + SweetAlert2</div>
+
+    <h3>7.1 Apertura del modal</h3>
+    <p><code>showCreate()</code> limpia cualquier edición anterior, prepara un formulario vacío, selecciona la primera categoría activa y cambia <code>open</code> a <code>true</code>. El modal se renderiza mediante un portal directamente en <code>document.body</code>, evitando recortes por contenedores animados.</p>
+
+    <h3>7.2 Campos controlados</h3>
+    <pre>&lt;input
+  value={form.name}
+  onChange={(event) =&gt;
+    setForm({ ...form, name: event.target.value })
+  }
+/&gt;</pre>
+    <p>El valor visible procede del estado. Cada pulsación ejecuta <code>onChange</code>, actualiza <code>form</code> y provoca un nuevo render.</p>
+
+    <h3>7.3 Primera barrera: validación HTML</h3>
+    <p>Los atributos <code>required</code>, <code>maxLength</code>, <code>min</code>, <code>max</code> y <code>type="number"</code> permiten al navegador detectar campos vacíos, números fuera de rango y longitudes excesivas antes de enviar.</p>
+    <div class="callout warning"><strong>Importante:</strong> la validación HTML mejora la experiencia, pero no brinda seguridad por sí sola. Una petición puede construirse manualmente, por lo que el servidor siempre vuelve a validar.</div>
+
+    <h3>7.4 Envío desde el navegador</h3>
+    <pre>async function save(event) {
+  event.preventDefault();
+
+  await fetch("/api/concepts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form)
+  });
+}</pre>
+    <p><code>preventDefault()</code> evita una recarga completa. El formulario se convierte en JSON y se envía a la API.</p>
+
+    <h2>8. Validación y normalización</h2>
+    <p>El endpoint ejecuta:</p>
+    <pre>const concept = createConcept(
+  parseConcept(await request.json())
+);</pre>
+    <p>El orden exacto es: leer JSON, ejecutar <code>parseConcept</code> y, solamente si no hay errores, llamar a <code>createConcept</code>.</p>
+    <p><code>parseConcept</code> no se limita a responder verdadero o falso. También normaliza:</p>
+    <pre>Entrada del navegador:
+{
+  name: "  Internet  ",
+  category: "Servicios",
+  defaultAmount: "12500.50",
+  dueDay: "10",
+  closingDay: "",
+  isActive: true
+}
+
+Salida validada:
+{
+  name: "Internet",
+  category: "Servicios",
+  defaultAmountCents: 1250050,
+  dueDay: 10,
+  closingDay: null,
+  isActive: 1
+}</pre>
+    <p>Los importes se almacenan como centavos enteros para evitar errores de coma flotante: <code>$12.500,50</code> se guarda como <code>1250050</code>.</p>
+    <p>Si una regla no se cumple, la función lanza una excepción:</p>
+    <pre>throw new Error(
+  "El día de vencimiento debe estar entre 1 y 31."
+);</pre>
+    <p>La excepción interrumpe el circuito antes de llegar a SQLite.</p>
+
+    <h2>9. Persistencia mediante repositorios</h2>
+    <p>El repositorio comprueba reglas que requieren consultar la base. Antes de crear un concepto verifica que la categoría exista y esté activa:</p>
+    <pre>SELECT id
+FROM categories
+WHERE name = ? AND is_active = 1;</pre>
+    <p>Después utiliza una consulta preparada:</p>
+    <pre>INSERT INTO concepts (
+  name, category, default_amount_cents,
+  due_day, closing_day, is_active
+)
+VALUES (
+  @name, @category, @defaultAmountCents,
+  @dueDay, @closingDay, @isActive
+);</pre>
+    <p>Las consultas preparadas separan el SQL de los valores del usuario y reducen el riesgo de inyección. SQLite devuelve el identificador creado; el repositorio consulta el registro y lo devuelve con el formato utilizado por JavaScript.</p>
+
+    <h3>9.1 Respuesta y actualización visual</h3>
+    <p>La API devuelve <span class="pill">HTTP 201 Created</span> junto con <code>{ "data": ... }</code>. El componente cierra el modal, vuelve a ejecutar <code>load()</code>, actualiza la grilla y muestra la confirmación de SweetAlert2.</p>
+  </section>
+
+  <section class="page-break">
+    <h2>10. Edición y eliminación de conceptos</h2>
+    <h3>10.1 Editar</h3>
+    <p>El lápiz ejecuta <code>showEdit(concept)</code>. La función guarda el objeto seleccionado en <code>editing</code>, copia sus datos a <code>form</code> y abre el modal.</p>
+    <p>Al guardar, <code>editing</code> hace que el método sea <code>PUT</code>:</p>
+    <pre>PUT /api/concepts/15</pre>
+    <p>La carpeta dinámica <code>[id]</code> permite obtener <code>15</code> desde <code>context.params</code>. La API vuelve a utilizar <code>parseConcept</code> y luego llama a <code>updateConcept</code>.</p>
+    <pre>Formulario → PUT → parseConcept → updateConcept
+→ UPDATE SQL → JSON → recarga de grilla</pre>
+
+    <h3>10.2 Eliminar o archivar</h3>
+    <p>SweetAlert2 pide confirmación y luego se envía:</p>
+    <pre>DELETE /api/concepts/15</pre>
+    <p>El repositorio comprueba si existen gastos asociados. Si no existen, elimina. Si hay historial, cambia <code>is_active</code> a cero. El archivado preserva las referencias históricas y evita que el concepto se genere en meses futuros.</p>
+
+    <h2>11. Administración de categorías</h2>
+    <p><code>CategoriesManager</code> utiliza los siguientes endpoints:</p>
+    <table>
+      <thead><tr><th>Método</th><th>Ruta</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td><code>/api/categories</code></td><td>Listar categorías.</td></tr>
+        <tr><td>POST</td><td><code>/api/categories</code></td><td>Crear categoría.</td></tr>
+        <tr><td>PUT</td><td><code>/api/categories/:id</code></td><td>Editar nombre, color y estado.</td></tr>
+        <tr><td>DELETE</td><td><code>/api/categories/:id</code></td><td>Eliminar o archivar.</td></tr>
+      </tbody>
+    </table>
+    <p><code>parseCategory</code> valida nombre, longitud, color hexadecimal y estado. El repositorio evita nombres duplicados.</p>
+    <h3>11.1 Renombrado transaccional</h3>
+    <p>Al renombrar se actualizan la categoría y los conceptos que la utilizan dentro de una transacción. Ambas operaciones se completan juntas o se revierten juntas.</p>
+    <p>Los gastos históricos no cambian: almacenan una fotografía del nombre utilizado en ese período.</p>
+    <h3>11.2 Eliminación segura</h3>
+    <p>Una categoría sin conceptos puede eliminarse. Si está en uso se archiva, deja de ofrecerse para nuevos conceptos y conserva la coherencia de los existentes.</p>
+
+    <h2>12. Circuito de gastos mensuales</h2>
+    <p>La ruta puede incluir un período:</p>
+    <pre>/gastos?month=2026-09</pre>
+    <p><code>app/gastos/page.js</code> valida el parámetro y entrega <code>initialMonth</code> a <code>ExpensesManager</code>. El componente carga en paralelo:</p>
+    <pre>GET /api/expenses?month=2026-09
+GET /api/concepts
+GET /api/categories</pre>
+    <p>Los conceptos alimentan el selector del modal. Las categorías se utilizan para representar sus colores en la grilla; la categoría del gasto proviene del concepto seleccionado.</p>
+
+    <h3>12.1 Agregar gasto</h3>
+    <p>Al elegir un concepto, el frontend propone:</p>
+    <ul>
+      <li>Importe habitual.</li>
+      <li>Fecha de cierre, si corresponde.</li>
+      <li>Fecha de vencimiento.</li>
+    </ul>
+    <pre>POST /api/expenses
+
+{
+  "conceptId": 8,
+  "month": "2026-09",
+  "amount": 250000,
+  "closingDate": "2026-08-28",
+  "dueDate": "2026-09-05",
+  "notes": ""
+}</pre>
+    <p><code>parseExpense</code> valida el identificador, el mes, el importe y las fechas. El repositorio consulta el concepto y toma de él el nombre y la categoría.</p>
+    <p>La restricción <code>UNIQUE(concept_id, month)</code> evita registrar dos veces el mismo concepto en un mismo período.</p>
+
+    <h3>12.2 Editar gasto</h3>
+    <pre>PATCH /api/expenses/:id</pre>
+    <p>Permite modificar importe, cierre, vencimiento y notas. Se usa <code>PATCH</code> porque se actualiza parte del recurso, no necesariamente su identidad completa.</p>
+
+    <h3>12.3 Eliminar gasto</h3>
+    <p>Después de confirmar con SweetAlert2, <code>DELETE /api/expenses/:id</code> elimina solamente la instancia del mes. El concepto reutilizable permanece disponible.</p>
+
+    <h2>13. Generación automática del mes</h2>
+    <pre>POST /api/expenses/generate
+{ "month": "2026-09" }</pre>
+    <p><code>generateMonth()</code> busca conceptos activos, calcula fechas e inserta los que todavía no están cargados. Todo se ejecuta dentro de una transacción.</p>
+    <p>Para una tarjeta que cierra el día 28 y vence el día 5:</p>
+    <pre>Período del gasto: septiembre de 2026
+Fecha de cierre:   28/08/2026
+Vencimiento:       05/09/2026</pre>
+    <p>Si el día de cierre es mayor que el de vencimiento, el sistema entiende que el cierre ocurrió en el mes anterior.</p>
+
+    <h2>14. Pagos, filtros, días y ordenamiento</h2>
+    <h3>14.1 Marcar pagado</h3>
+    <pre>PATCH /api/expenses/:id
+{ "status": "paid" }</pre>
+    <p>El repositorio establece <code>status = 'paid'</code> y guarda <code>paid_at</code>. Al regresar a pendiente, elimina la fecha de pago.</p>
+
+    <h3>14.2 Filtros y búsqueda</h3>
+    <p>La lista ya cargada en React se filtra por estado y por coincidencia con concepto o categoría. No se consulta nuevamente SQLite porque el volumen de un único mes es pequeño.</p>
+
+    <h3>14.3 Días restantes</h3>
+    <p>El navegador compara el vencimiento con la fecha local y muestra valores como:</p>
+    <pre>15 días · 1 día · Vence hoy · 2 días vencido · Pagado</pre>
+
+    <h3>14.4 Ordenamiento</h3>
+    <p><code>sortBy</code> y <code>sortDirection</code> controlan el orden por concepto, fecha de cierre o vencimiento. Las fechas de cierre vacías permanecen al final.</p>
+  </section>
+
+  <section class="page-break">
+    <h2>15. Dashboard e historial</h2>
+    <p>El dashboard consulta en paralelo:</p>
+    <pre>GET /api/stats?month=2026-09
+GET /api/categories</pre>
+    <p><code>getStats()</code> realiza agregaciones SQL:</p>
+    <pre>SUM(amount_cents)
+SUM(CASE WHEN status = 'paid' THEN amount_cents ELSE 0 END)
+SUM(CASE WHEN status = 'pending' THEN amount_cents ELSE 0 END)</pre>
+    <p>Se calculan total mensual, total pagado, pendiente, porcentaje de cumplimiento, distribución por categoría, evolución de seis meses y movimientos recientes. Recharts representa esos datos visualmente.</p>
+    <p>El historial consulta <code>GET /api/history</code>, agrupa por mes y compara cada período con el anterior.</p>
+
+    <h2>16. Manejo de errores</h2>
+    <div class="diagram">Validación HTML
+    ↓
+Validación y normalización del servidor
+    ↓
+Reglas del repositorio
+    ↓
+Restricciones de SQLite
+    ↓
+Respuesta HTTP controlada
+    ↓
+Mensaje SweetAlert2</div>
+    <table>
+      <thead><tr><th>Nivel</th><th>Ejemplos</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>HTML</td><td>Obligatorio vacío, número fuera de rango.</td><td>El navegador detiene el envío.</td></tr>
+        <tr><td><code>validation.js</code></td><td>Importe negativo, fecha inválida, nombre demasiado largo.</td><td>Se lanza un error y la API responde 400.</td></tr>
+        <tr><td>Repositorio</td><td>Categoría inexistente, concepto inexistente.</td><td>La regla de negocio rechaza la operación.</td></tr>
+        <tr><td>SQLite</td><td>Concepto duplicado en el mismo mes.</td><td>La restricción protege la integridad.</td></tr>
+        <tr><td>Frontend</td><td>Respuesta <code>{ "error": "..." }</code>.</td><td>SweetAlert2 muestra un mensaje entendible.</td></tr>
+      </tbody>
+    </table>
+    <p>Los endpoints están envueltos en <code>try/catch</code>. Ante un error, no devuelven una página rota, sino JSON y un código HTTP apropiado.</p>
+
+    <h2>17. Funcionamiento dentro del VPS y Docker</h2>
+    <div class="diagram">Navegador del usuario
+        ↓
+Dominio o IP del VPS
+        ↓
+Puerto publicado por Docker
+        ↓
+Contenedor “pandagestion”
+        ↓
+Servidor Node.js / Next.js
+        ↓
+API Route → Repositorio → SQLite
+        ↓
+/app/data/panda-gestion.db
+        ↓
+Volumen “pandagestion_data”</div>
+    <p>La imagen contiene el código compilado. El archivo SQLite está fuera de la capa descartable del contenedor, dentro de un volumen:</p>
+    <pre>volumes:
+  - pandagestion_data:/app/data</pre>
+    <p>Por eso <code>docker compose up -d --build</code> puede reemplazar el contenedor sin perder datos.</p>
+    <div class="callout warning"><strong>No ejecutar:</strong> <code>docker compose down -v</code>. La opción <code>-v</code> elimina el volumen de SQLite.</div>
+    <p><code>restart: unless-stopped</code> hace que Docker reinicie la aplicación después de una caída o un reinicio del VPS, salvo que haya sido detenida intencionalmente.</p>
+    <p>La aplicación se ejecuta con un usuario sin privilegios dentro del contenedor y expone un healthcheck que consulta la API para comprobar su estado.</p>
+
+    <h2>18. Responsabilidad resumida por archivo</h2>
+    <table>
+      <thead><tr><th>Archivo o carpeta</th><th>Responsabilidad</th></tr></thead>
+      <tbody>
+        <tr><td><code>app/layout.js</code></td><td>Estructura común y metadatos.</td></tr>
+        <tr><td><code>components/AppShell.js</code></td><td>Menú y navegación general.</td></tr>
+        <tr><td><code>app/**/page.js</code></td><td>Punto de entrada de cada URL.</td></tr>
+        <tr><td><code>components/*Manager.js</code></td><td>Interacción, formularios, estado y llamadas HTTP.</td></tr>
+        <tr><td><code>components/ui/</code></td><td>Modal, cabecera, selector de mes, carga y estados vacíos reutilizables.</td></tr>
+        <tr><td><code>app/api/**/route.js</code></td><td>Controladores HTTP y códigos de respuesta.</td></tr>
+        <tr><td><code>lib/validation.js</code></td><td>Validación y transformación de entradas.</td></tr>
+        <tr><td><code>lib/repositories/</code></td><td>Reglas de negocio, SQL y transacciones.</td></tr>
+        <tr><td><code>lib/db.js</code></td><td>Conexión, esquema, configuración y migraciones.</td></tr>
+        <tr><td><code>lib/constants.js</code></td><td>Categorías iniciales y colores predeterminados.</td></tr>
+        <tr><td><code>lib/formatters.js</code></td><td>Presentación de moneda, meses y fechas.</td></tr>
+        <tr><td><code>Dockerfile</code></td><td>Construcción de la imagen optimizada de producción.</td></tr>
+        <tr><td><code>docker-compose.yml</code></td><td>Servicio, puerto, reinicio, seguridad y volumen.</td></tr>
+        <tr><td><code>CONTEXTO.md</code></td><td>Decisiones funcionales y técnicas para futuras sesiones.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Conclusión</h2>
+    <p>La separación permite modificar una parte sin reescribir todo el sistema. React se ocupa de la interacción; la API, del protocolo HTTP; <code>validation.js</code>, de convertir entradas inseguras; los repositorios, de las reglas y consultas; y <code>db.js</code>, de administrar SQLite.</p>
+    <p>Este recorrido consistente se repite para conceptos, categorías, gastos, estadísticas e historial. La consecuencia es un código más legible, comprobable y sencillo de ampliar.</p>
+
+    <div class="footer-note">PandaGestion · Documento técnico de arquitectura y funcionamiento · 7 de septiembre de 2026</div>
+  </section>
+</body>
+</html>
